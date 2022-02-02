@@ -6,29 +6,25 @@ module controller
 	)
 	
 	(
-		input			CLOCK_50,
-		input			UART_RXD,
-		input			UART_RTS,
-		output    	[7:0]	LEDR
+		input					CLOCK_50,
+		input					UART_RXD,
+		output	reg [7:0] 	RX_DATA,
+		output	reg 			RX_DONE
 	);
 	
-  parameter IDLE         = 3'b000;
-  parameter START = 3'b001;
-  parameter DATA = 3'b010;
-  parameter STOP  = 3'b011;
-  parameter CLEANUP      = 3'b100;
+	parameter IDLE         = 3'b000;
+	parameter START = 3'b001;
+	parameter DATA = 3'b010;
+	parameter STOP 		 = 3'b011;
+	parameter CLEANUP      = 3'b100;
 	
 	wire clk;
 	assign clk = CLOCK_50;
 	
 	reg [2:0] state = 0;
-	reg [31:0] counter = 0;
+	reg [15:0] counter = 0;
 	reg [2:0]  index = 0;
-	//reg		 RX_DV;
 	
-	reg [7:0] leds;
-	
-	assign LEDR = leds;
 	
 	always @(posedge clk)
 	begin
@@ -37,6 +33,7 @@ module controller
 				begin
 					counter <= 0;
 					index <= 0;
+					RX_DONE <= 0;
 					
 					if (UART_RXD == 1'b0)
 						state <= START;
@@ -46,7 +43,6 @@ module controller
 			
 			START:
 				begin
-					leds <= 0;
 					if (counter == CLKS_PER_BIT/2)
 						begin
 							if (UART_RXD == 1'b0)
@@ -73,7 +69,7 @@ module controller
 					else
 					begin
 						counter <= 0;
-						leds[index] <= UART_RXD;
+						RX_DATA[index] <= UART_RXD;
 						
 						if (index < 7)
 						begin
@@ -102,6 +98,7 @@ module controller
 				end
 			CLEANUP:
 				begin
+					RX_DONE <= 1'b1;
 					state <= IDLE;
 				end
 			default:
