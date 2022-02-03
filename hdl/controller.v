@@ -6,105 +6,75 @@ module controller
 	)
 	
 	(
-		input					CLOCK_50,
-		input					UART_RXD,
-		output	reg [7:0] 	RX_DATA,
-		output	reg 			RX_DONE
+		input						CLOCK_50,
+		output 					UART_TXD,
+		input						UART_RXD,
+		input			 [9:0]	SW,
+		input			 [1:0]	KEY,
+		output		 [10:0]	LEDR
 	);
 	
-	parameter IDLE         = 3'b000;
-	parameter START = 3'b001;
-	parameter DATA = 3'b010;
-	parameter STOP 		 = 3'b011;
-	parameter CLEANUP      = 3'b100;
+	reg state;
 	
-	wire clk;
-	assign clk = CLOCK_50;
+	wire [7:0] rx_data, tx_data;
+	wire rx_done, tx_busy;
 	
-	reg [2:0] state = 0;
-	reg [15:0] counter = 0;
-	reg [2:0]  index = 0;
+	/*rx_controller rx (
+		.clk(CLOCK_50),
+		.UART_RXD(UART_RXD),
+		.RX_DATA(rx_data),
+		.RX_DONE(rx_done)
+	);*/
 	
+	tx_controller tx (
+		.clk(CLOCK_50),
+		.TX_SEND(~(empty|tx_busy)&KEY_1),
+		.UART_TXD(UART_TXD),
+		.TX_DATA(tx_data),
+		.TX_DONE(),
+		.TX_BUSY(tx_busy)
+	);
 	
-	always @(posedge clk)
-	begin
-		case (state)
-			IDLE:
-				begin
-					counter <= 0;
-					index <= 0;
-					RX_DONE <= 0;
-					
-					if (UART_RXD == 1'b0)
-						state <= START;
-					else
-						state <= IDLE;
-				end
-			
-			START:
-				begin
-					if (counter == CLKS_PER_BIT/2)
-						begin
-							if (UART_RXD == 1'b0)
-								begin
-									counter <= 0;
-									state <= DATA;
-								end
-							else
-								state <= IDLE;
-						end
-					else
-						begin
-							counter <= counter + 1;
-							state <= START;
-						end
-				end
-			DATA:
-				begin
-					if (counter < CLKS_PER_BIT - 1)
-					begin
-						counter <= counter + 1;
-						state <= DATA;
-					end
-					else
-					begin
-						counter <= 0;
-						RX_DATA[index] <= UART_RXD;
-						
-						if (index < 7)
-						begin
-							index <= index + 1;
-							state <= DATA;
-						end
-						else
-						begin
-							index <= 0;
-							state <= STOP;
-						end
-					end
-				end
-			STOP:
-				begin
-					if (counter < CLKS_PER_BIT - 1)
-					begin
-						counter <= counter + 1;
-						state <= STOP;
-					end
-					else
-					begin
-						counter <= 0;
-						state <= CLEANUP;
-					end
-				end
-			CLEANUP:
-				begin
-					RX_DONE <= 1'b1;
-					state <= IDLE;
-				end
-			default:
-				state <= IDLE;
-		endcase
-	end			
+	/*always @(posedge CLOCK_50)
+		state <= SW[8];*/
+		
+	wire empty;	
+		
+	FIFO FIFO (
+		.clk(CLOCK_50),
+		.rst(1'b0),
+		.in(SW[7:0]),
+		.we(TX_SEND_EDGE),
+		.re(~(empty|tx_busy)&KEY_1),
+		.out(tx_data),
+		.empty(empty),
+		.led(LEDR[8:0])
+	);
+	
+	assign LEDR[10] = tx_busy;
+
+	assign LEDR[9] = empty;
+	
+	wire TX_SEND_DB, TX_SEND_EDGE;
+	
+	debouncer debouncer (
+		.clk(CLOCK_50),
+		.in(~KEY[0]),
+		.out(TX_SEND_DB)
+	);
+	
+	debouncer debouncer1 (
+		.clk(CLOCK_50),
+		.in(~KEY[1]),
+		.out(KEY_1)
+	);
+	
+	edge_detector edge_detector (
+		.clk(CLOCK_50),
+		.in(TX_SEND_DB),
+		.out(TX_SEND_EDGE)
+	);
+		
 endmodule
 					
 					
