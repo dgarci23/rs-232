@@ -6,25 +6,24 @@ module controller
 	)
 	
 	(
-		input						CLOCK_50,
+		input					CLOCK_50,
 		output 					UART_TXD,
-		input						UART_RXD,
-		input			 [9:0]	SW,
-		input			 [1:0]	KEY,
-		output		 [10:0]	LEDR
+		input					UART_RXD,
+		input			 [9:0]		SW,
+		input			 [1:0]		KEY,
+		output		 	 [10:0]		LEDR
 	);
 	
-	reg state;
-	
+	reg state;	
 	wire [7:0] rx_data, tx_data;
 	wire rx_done, tx_busy;
 	
-	/*rx_controller rx (
+	rx_controller rx (
 		.clk(CLOCK_50),
 		.UART_RXD(UART_RXD),
 		.RX_DATA(rx_data),
 		.RX_DONE(rx_done)
-	);*/
+	);
 	
 	tx_controller tx (
 		.clk(CLOCK_50),
@@ -40,7 +39,7 @@ module controller
 		
 	wire empty;	
 		
-	FIFO FIFO (
+	FIFO fifo_tx (
 		.clk(CLOCK_50),
 		.rst(1'b0),
 		.in(SW[7:0]),
@@ -49,6 +48,16 @@ module controller
 		.out(tx_data),
 		.empty(empty),
 		.led(LEDR[8:0])
+	);
+
+	FIFO fifo_rx (
+		.clk(CLOCK_50),
+		.rst(1'b0),
+		.in(),
+		.we(),
+		.re(),
+		.out(),
+		.empty()
 	);
 	
 	assign LEDR[10] = tx_busy;
