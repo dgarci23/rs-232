@@ -1,7 +1,11 @@
-module debouncer (
-	input clk,
-	input in,
-	output reg out
+module debouncer 
+
+	#(parameter SIZE = 1)
+
+	(
+		input 						clk,
+		input 		[SIZE-1:0]	in,
+		output reg 	[SIZE-1:0]	out
 	);
 	
 	reg [19:0] count;

@@ -12,8 +12,7 @@ module FIFO
 		input										we,
 		input										re,
 		output reg	[WORD_LEN-1:0]			out,
-		output 									empty,
-		output		[8:0]					led
+		output 									empty
 	);
 	
 	
@@ -22,8 +21,6 @@ module FIFO
 	reg [$clog2(SIZE)-1:0] rpointer, wpointer;
 	initial rpointer = 0;
 	initial wpointer = 0;
-	
-	assign led[8:0] = {rpointer, 1'b0, wpointer};
 	
 	assign empty = (rpointer == wpointer);
 	
@@ -38,7 +35,7 @@ module FIFO
 			begin
 				if (we)
 				begin
-					data[wpointer] <= {4'b0110, wpointer};
+					data[wpointer] <= in;
 					wpointer <= wpointer + 1;
 				end
 				if (re)
