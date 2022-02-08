@@ -21,28 +21,17 @@ module top_rs232
 		.receive_data(LEDR)
 	);
 	
-	debouncer re_debouncer (
-		.in(~KEY[0]),
-		.out(KEY_0_DB),
+	debouncer #(.SIZE(2)) re_debouncer (
+		.in({~KEY[1],~KEY[0]}),
+		.out({KEY_1_DB, KEY_0_DB}),
 		.clk(CLOCK_50)
 	);
 	
-	debouncer we_debouncer (
-		.in(~KEY[1]),
-		.out(KEY_1_DB),
+	edge_detector #(.SIZE(2)) re_edge (
+		.in({KEY_1_DB, KEY_0_DB}),
+		.out({WE, RE}),
 		.clk(CLOCK_50)
 	);
 	
-	edge_detector re_edge (
-		.in(KEY_0_DB),
-		.out(RE),
-		.clk(CLOCK_50)
-	);
-	
-	edge_detector we_edge (
-		.in(KEY_1_DB),
-		.out(WE),
-		.clk(CLOCK_50)
-	);
 	
 endmodule
